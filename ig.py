@@ -1,24 +1,24 @@
-import requests
 import json
 import datetime
 import requests
-from flask import jsonify, request, Flask, Blueprint
+from flask import Flask, Blueprint
 
 
 app = Flask(__name__)
-
 content = Blueprint('content', __name__)
 
-def find(ID, USER, count):
-    urls = []
-    url = "https://yadayada.com"
+
+def find_videos(user_id, username, count):
+    videos = []
+    api_url = "https://yadayada.com"
+    
     headers = {
         "accept": "*/*",
         "accept-language": "fr-FR,fr;q=0.6",
         "content-type": "text/plain;charset=UTF-8",
         "cookie": "NEXT_LOCALE=fr",
         "origin": "https://yadayada.com",
-        "referer": f"https://yadayada.com/fr/yada/{USER}",
+        "referer": f"https://yadayada.com/fr/yada/{username}",
         "sec-ch-ua": '"Brave";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
@@ -29,36 +29,34 @@ def find(ID, USER, count):
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
     }
 
-    i = 0
-    next = None
-    results = 0
-    o = 0
-    while results < count:
-        if next:
-            data = f'{{"id": {str(ID)}, "next_cursor": "{next}"}}'
+    next_cursor = None
+    items_processed = 0
+    
+    while items_processed < count:
+        if next_cursor:
+            payload = f'{{"id": {user_id}, "next_cursor": "{next_cursor}"}}'
         else:
-            data = f'{{"id": {str(ID)}}}'
+            payload = f'{{"id": {user_id}}}'
 
-        response = requests.post(url, headers=headers, data=data)
-        f = response.content
-        data = json.loads(f.decode('utf-8'))
-        next = data["next_max_id"]
+        response = requests.post(api_url, headers=headers, data=payload)
+        response_data = response.json()
+        next_cursor = response_data.get("next_max_id")
 
-        for item in data['items']:
-            if i >= count:
-                results = count + 1
+        for item in response_data.get('items', []):
+            if items_processed >= count:
                 break
-            if item['type'] == 'video':
-                posted = datetime.datetime.fromtimestamp(item['created_at'])
-                timestamp = int(posted.timestamp())
-                posted = datetime.datetime.fromtimestamp(timestamp)
-                inslink = f"https://www.somelink.com/p/{item['shortcode']}/"
-                info = {
-                    "Postedtime": str(posted),
-                    "vidurl": item['media'][0]['url'],
-                    "somelink": inslink
+                
+            if item.get('type') == 'video':
+                posted_time = datetime.datetime.fromtimestamp(item['created_at'])
+                video_link = f"https://www.somelink.com/p/{item['shortcode']}/"
+                
+                video_info = {
+                    "posted_time": str(posted_time),
+                    "video_url": item['media'][0]['url'],
+                    "link": video_link
                 }
-                urls.append(info)
+                videos.append(video_info)
 
-            i = i + 1
-    return urls
+            items_processed += 1
+            
+    return videos

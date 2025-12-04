@@ -5,6 +5,7 @@ from datetime import datetime
 def get_latest_launch():
     response = requests.get('https://api.spacexdata.com/v4/launches/latest')
     data = response.json()
+    
     return {
         'name': data['name'],
         'date_utc': data['date_utc'],
@@ -24,14 +25,20 @@ def format_date(date_str):
     return dt.strftime('%Y-%m-%d %H:%M:%S UTC')
 
 
-if __name__ == '__main__':
+def main():
     latest = get_latest_launch()
-
     rocket_name = get_rocket_name(latest['rocket_id'])
     formatted_date = format_date(latest['date_utc'])
 
-    print("Latest SpaceX launch info:")
-    print(f"Name: {latest['name']}")
-    print(f"Date: {formatted_date}")
-    print(f"Rocket: {rocket_name}")
-    print(f"Success: {latest['success']}")
+    print("=" * 50)
+    print("Latest SpaceX Launch Information")
+    print("=" * 50)
+    print(f"Mission Name: {latest['name']}")
+    print(f"Launch Date:  {formatted_date}")
+    print(f"Rocket:       {rocket_name}")
+    print(f"Success:      {'✓ Yes' if latest['success'] else '✗ No'}")
+    print("=" * 50)
+
+
+if __name__ == '__main__':
+    main()
